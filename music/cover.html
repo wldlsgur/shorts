@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Shrik;src:url(fonts/shrikhand.woff2)}
+@font-face{font-family:Mono;src:url(fonts/monoton.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c"></canvas><script>
+// draws the square cover art at size S onto ctx at (ox,oy)
+const PAL={sunset:['#2a0b4a','#9b1d6e','#ff6a3d','#ffc65a'],ocean:['#071a3a','#1d4f9b','#3dc1ff','#b8f3ff'],neon:['#0b0420','#3a0b6e','#ff2fb3','#ffd1f0'],forest:['#08200f','#1d6e3a','#9bd84a','#f2ffb0'],night:['#05060f','#1a1f4a','#5a4fcf','#c9c3ff']};
+function cover(x,ox,oy,S){const O=window.OPT||{};const P=PAL[O.palette||'sunset'];
+ x.save();x.translate(ox,oy);x.scale(S/1000,S/1000);
+ x.beginPath();x.rect(0,0,1000,1000);x.clip();
+ // sunset sky
+ let g=x.createLinearGradient(0,0,0,1000);g.addColorStop(0,P[0]);g.addColorStop(.45,P[1]);g.addColorStop(.7,P[2]);g.addColorStop(1,P[3]);x.fillStyle=g;x.fillRect(0,0,1000,1000);
+ // 70s sunburst rays
+ x.save();x.translate(500,640);for(let i=0;i<24;i++){x.rotate(Math.PI*2/24);x.fillStyle=i%2?'rgba(255,220,150,.10)':'rgba(255,255,255,0)';x.beginPath();x.moveTo(0,0);x.lineTo(900,-60);x.lineTo(900,60);x.fill();}x.restore();
+ // sun with stripes
+ x.save();x.beginPath();x.arc(500,640,250,0,7);x.clip();g=x.createLinearGradient(0,390,0,890);g.addColorStop(0,'#fff1a8');g.addColorStop(1,'#ff8a3d');x.fillStyle=g;x.fillRect(0,0,1000,1000);
+ for(let i=0;i<7;i++){const y=700+i*26;x.fillStyle='#e8466e';x.fillRect(0,y,1000,6+i*2);}x.restore();
+ // city skyline
+ x.fillStyle=P[0];let s=O.seed||7;const R=()=>(s=(s*9301+49297)%233280)/233280;
+ for(let bx=-10;bx<1010;){const w=50+R()*80,h=120+R()*260;x.fillRect(bx,1000-h-80,w,h+80);
+  x.fillStyle='rgba(255,210,120,.75)';for(let wy=1000-h-60;wy<930;wy+=34)for(let wx=bx+10;wx<bx+w-14;wx+=22)if(R()<0.45)x.fillRect(wx,wy,9,14);x.fillStyle=P[0];bx+=w+6;}
+ // disco ball
+ const bx=760,by=210,br=120;x.strokeStyle='rgba(255,255,255,.6)';x.lineWidth=3;x.beginPath();x.moveTo(bx,0);x.lineTo(bx,by-br);x.stroke();
+ x.save();x.beginPath();x.arc(bx,by,br,0,7);x.clip();g=x.createRadialGradient(bx-40,by-40,10,bx,by,br);g.addColorStop(0,'#fff');g.addColorStop(1,'#7a6aa8');x.fillStyle=g;x.fillRect(bx-br,by-br,2*br,2*br);
+ for(let yy=-br;yy<br;yy+=18)for(let xx=-br;xx<br;xx+=18){x.fillStyle=`rgba(${R()>.7?'255,255,255':'60,40,110'},${0.25+R()*0.35})`;x.fillRect(bx+xx+1,by+yy+1,16,16);}x.restore();
+ for(let i=0;i<10;i++){const a=R()*7,l=40+R()*60;x.strokeStyle='rgba(255,255,255,.7)';x.lineWidth=2;x.beginPath();x.moveTo(bx+Math.cos(a)*(br+10),by+Math.sin(a)*(br+10));x.lineTo(bx+Math.cos(a)*(br+10+l),by+Math.sin(a)*(br+10+l));x.stroke();}
+ // title
+ x.textAlign='left';x.font='86px Mono';x.fillStyle='#ffe9f5';x.shadowColor='#ff2f8e';x.shadowBlur=28;(O.small||['FRIDAY','NIGHT']).forEach((t,i)=>x.fillText(t,70,170+i*100));x.shadowBlur=0;
+ const big=O.big||'Family';let fs=150;x.font=fs+'px Shrik';while(x.measureText(big).width>600&&fs>70){fs-=6;x.font=fs+'px Shrik';}const by2=170+(O.small||[1,1]).length*100+fs*0.55;x.lineWidth=16;x.strokeStyle=P[0];x.strokeText(big,60,by2);x.fillStyle='#ffd34d';x.fillText(big,60,by2);
+ // grain
+ for(let i=0;i<9000;i++){x.fillStyle=`rgba(255,255,255,${R()*0.05})`;x.fillRect(R()*1000,R()*1000,2,2);}
+ x.restore();
+}
+window.cover=cover;
+</script></body></html>
