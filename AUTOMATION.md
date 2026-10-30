@@ -7,6 +7,8 @@
 - 가격은 LV3 하나만 사도 예산 대부분이 빠지게, 조합 고민이 생기게 잡는다.
 - 주제는 사람들이 일상에서 겪을 수 없는 상상 콘텐츠 (초능력, 마법 아이템, 판타지 직업, 미래 기술, 무인도·좀비 생존 장비 등).
 - 텍스트가 길면 레이아웃이 넘쳐 렌더가 실패하므로, 레벨 설명은 공백 포함 8자 안팎.
+- 하단 댓글 문구는 쇼츠 UI에 가리지 않게 y 1640px 위에 있어야 함 (render.py가 자동 검사).
+- 미리보기: `PREVIEW=8 python3 generator/render.py specs/x.json frame.jpg`
 
 ## 렌더
 `python3 generator/render.py specs/<날짜-슬러그>.json videos/<날짜-슬러그>.mp4`
