@@ -98,6 +98,7 @@ document.getAnimations().forEach(a=>a.pause());"""
 FPS, DUR = 30, 12.0
 with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as fh:
     fh.write(doc); page_path = fh.name
+os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
 tmp = out + ".part.mp4"
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={"width": 1080, "height": 1920})
