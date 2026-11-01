@@ -20,6 +20,8 @@ Spec:
     {"key": "D", "label": "패널티",   "cells": [...]}
   ],
   "footer": "줄마다 하나씩! 만원 안에서 골라봐",
+  # optional: "price_labels": ["1억","10억","100억","1000억"] replaces the 원 headers,
+  #           "badge_label": "예산" is the small text above "budget" in the yellow circle
   "youtube_title": "..."
 }
 Cell text: about 9 characters max (two short lines allowed with "\n"). One emoji per cell.
@@ -42,8 +44,8 @@ h1{font-size:96px;line-height:1.08;font-weight:400;letter-spacing:-1px;color:#2b
 h1 .l2{color:#ff5a76}
 .budget{position:absolute;right:60px;top:56px;width:220px;height:220px;border-radius:50%;background:#ffd84d;
 border:6px solid #2b2233;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(8deg)}
-.budget small{font-size:36px}
-.budget b{font-size:74px;font-weight:400;line-height:1}
+.budget small{font-size:36px;max-width:200px;overflow:hidden;white-space:nowrap}
+.budget b{font-size:74px;max-width:200px;overflow:hidden;white-space:nowrap;font-weight:400;line-height:1}
 .sparkle{position:absolute;font-size:56px}
 .grid{margin:0 28px;display:grid;grid-template-columns:132px repeat(4,1fr);gap:8px}
 .ph{height:84px;border:4px solid #2b2233;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:42px;letter-spacing:-1px}
@@ -66,7 +68,7 @@ def won(n):
     return f"{int(n):,}원"
 
 head = '<div></div>' + "".join(
-    f'<div class="ph" style="background:{HEAD_COLORS[i % 4]}">{won(p)}</div>' for i, p in enumerate(spec["prices"]))
+    f'<div class="ph" style="background:{HEAD_COLORS[i % 4]}">{e(lbl)}</div>' for i, lbl in enumerate(spec.get("price_labels") or [won(p) for p in spec["prices"]]))
 rows = ""
 for r, row in enumerate(spec["rows"]):
     strong, soft = ROW_COLORS[r % 4]
@@ -78,7 +80,7 @@ t1, t2 = spec["title"]
 doc = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <link rel="stylesheet" href="file://{HERE}/fonts/jua/index.css"><style>{CSS}</style></head><body>
 <div class="top"><h1>{e(t1)}<br><span class="l2">{e(t2)}</span></h1>
-<div class="budget"><small>예산</small><b>{e(spec["budget"])}</b></div>
+<div class="budget"><small>{e(spec.get("badge_label", "예산"))}</small><b>{e(spec["budget"])}</b></div>
 <div class="sparkle" style="right:290px;top:60px">✨</div><div class="sparkle" style="right:36px;top:40px">⭐</div></div>
 <div class="grid">{head}{rows}</div>
 <div class="foot"><span>{e(spec["footer"])} <em>👇 댓글로</em></span></div></body></html>"""
@@ -105,7 +107,7 @@ with sync_playwright() as p:
     pg.goto("file://" + page_path); pg.evaluate("document.fonts.ready"); pg.wait_for_timeout(800)
     bottom = pg.evaluate("document.querySelector('.foot').getBoundingClientRect().bottom")
     if bottom > 1650: sys.exit(f"layout too tall ({bottom:.0f}px > 1650): shorten cell text")
-    clipped = pg.evaluate("[...document.querySelectorAll('.cell .t,.ph,.rl span')].filter(x=>x.scrollWidth>x.clientWidth+2).map(x=>x.textContent)")
+    clipped = pg.evaluate("[...document.querySelectorAll('.cell .t,.ph,.rl span,.budget b,.budget small')].filter(x=>x.scrollWidth>x.clientWidth+2).map(x=>x.textContent)")
     if clipped: sys.exit(f"text too wide, shorten: {clipped}")
     pg.evaluate(JS)
     if os.environ.get("PREVIEW"):
