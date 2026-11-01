@@ -22,6 +22,8 @@ Spec:
   "footer": "줄마다 하나씩! 만원 안에서 골라봐",
   # optional: "price_labels": ["1억","10억","100억","1000억"] replaces the 원 headers,
   #           "badge_label": "예산" is the small text above "budget" in the yellow circle
+  #           "subtitle": "항목마다 하나씩 · 합계 100만원 이하"  small line under the title
+  #           "note": "가상 선택 게임 · 한 달 패키지 가격"  tiny caption under the footer
   "youtube_title": "..."
 }
 Cell text: about 9 characters max (two short lines allowed with "\n"). One emoji per cell.
@@ -45,7 +47,7 @@ h1 .l2{color:#ff5a76}
 .budget{position:absolute;right:60px;top:56px;width:220px;height:220px;border-radius:50%;background:#ffd84d;
 border:6px solid #2b2233;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(8deg)}
 .budget small{font-size:36px;max-width:200px;overflow:hidden;white-space:nowrap}
-.budget b{font-size:74px;max-width:200px;overflow:hidden;white-space:nowrap;font-weight:400;line-height:1}
+.budget b{font-size:74px;max-width:176px;overflow:hidden;white-space:nowrap;font-weight:400;line-height:1}
 .sparkle{position:absolute;font-size:56px}
 .grid{margin:0 28px;display:grid;grid-template-columns:132px repeat(4,1fr);gap:8px}
 .ph{height:84px;border:4px solid #2b2233;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:42px;letter-spacing:-1px}
@@ -57,6 +59,10 @@ border:6px solid #2b2233;display:flex;flex-direction:column;align-items:center;j
 .cell .i{font-size:118px;line-height:1;margin-top:10px;font-family:"Noto Color Emoji",sans-serif}
 .foot{margin:26px 28px 0;text-align:center}
 .foot span{display:inline-block;background:#2b2233;color:#fff;font-size:46px;padding:16px 40px;border-radius:999px}
+.sub{position:absolute;left:58px;top:258px;max-width:700px;white-space:nowrap;overflow:hidden;font-size:34px;color:#6b5d74;letter-spacing:-.5px}
+.note{margin-top:14px;text-align:center;font-size:30px;color:#8a7d92}
+body.compact .cell{height:250px}
+body.compact .cell .i{font-size:110px}
 .foot em{font-style:normal;color:#ffd84d}
 @keyframes pop{0%{opacity:0;transform:scale(.5)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
 @keyframes popr{0%{opacity:0;transform:rotate(8deg) scale(.4)}70%{opacity:1;transform:rotate(8deg) scale(1.1)}100%{opacity:1;transform:rotate(8deg) scale(1)}}
@@ -77,13 +83,15 @@ for r, row in enumerate(spec["rows"]):
         rows += f'<div class="cell" data-row="{r}" style="background:{soft}"><div class="t">{e(text)}</div><div class="i">{e(icon)}</div></div>'
 
 t1, t2 = spec["title"]
+sub = f'<div class="sub">{e(spec["subtitle"])}</div>' if spec.get("subtitle") else ""
+note = f'<div class="note">{e(spec["note"])}</div>' if spec.get("note") else ""
 doc = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<link rel="stylesheet" href="file://{HERE}/fonts/jua/index.css"><style>{CSS}</style></head><body>
-<div class="top"><h1>{e(t1)}<br><span class="l2">{e(t2)}</span></h1>
+<link rel="stylesheet" href="file://{HERE}/fonts/jua/index.css"><style>{CSS}</style></head><body class="{'compact' if note else ''}">
+<div class="top"><h1>{e(t1)}<br><span class="l2">{e(t2)}</span></h1>{sub}
 <div class="budget"><small>{e(spec.get("badge_label", "예산"))}</small><b>{e(spec["budget"])}</b></div>
 <div class="sparkle" style="right:290px;top:60px">✨</div><div class="sparkle" style="right:36px;top:40px">⭐</div></div>
 <div class="grid">{head}{rows}</div>
-<div class="foot"><span>{e(spec["footer"])} <em>👇 댓글로</em></span></div></body></html>"""
+<div class="foot"><span>{e(spec["footer"])} <em>👇 댓글로</em></span>{note}</div></body></html>"""
 
 JS = """const add=(el,n,d,t,x='')=>{el.style.animation=`${n} ${t}s cubic-bezier(.2,.8,.3,1) ${d}s both${x}`};
 add(document.querySelector('h1'),'pop',0.1,0.6);
@@ -95,6 +103,8 @@ rls.forEach((l,r)=>{const t=1.8+r*1.1;add(l,'up',t,0.45);
  document.querySelectorAll(`.cell[data-row="${r}"]`).forEach((c,j)=>add(c,'pop',t+0.15+j*0.13,0.45));});
 const fd=1.8+rls.length*1.1+0.2;const f=document.querySelector('.foot span');
 f.style.animation=`pop 0.6s cubic-bezier(.2,.8,.3,1) ${fd}s both, pulse 1.1s ease-in-out ${fd+0.7}s infinite`;
+const sb=document.querySelector('.sub');if(sb)add(sb,'up',0.5,0.5);
+const nt=document.querySelector('.note');if(nt)add(nt,'up',fd+0.3,0.5);
 document.getAnimations().forEach(a=>a.pause());"""
 
 FPS, DUR = 30, 12.0
@@ -105,9 +115,15 @@ tmp = out + ".part.mp4"
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={"width": 1080, "height": 1920})
     pg.goto("file://" + page_path); pg.evaluate("document.fonts.ready"); pg.wait_for_timeout(800)
+    # shrink badge text / title until it fits
+    pg.evaluate("""(()=>{for(const el of document.querySelectorAll('.budget b,.budget small')){let f=parseFloat(getComputedStyle(el).fontSize);
+      while(el.scrollWidth>el.clientWidth+1&&f>24){f-=2;el.style.fontSize=f+'px'}}
+      const h=document.querySelector('h1'),b=document.querySelector('.budget').getBoundingClientRect();let f=parseFloat(getComputedStyle(h).fontSize);
+      const over=()=>{const r=document.createRange();r.selectNodeContents(h);return [...r.getClientRects()].some(c=>c.right>b.left-8&&c.top<b.bottom)};
+      while(over()&&f>60){f-=3;h.style.fontSize=f+'px'}})()""")
     bottom = pg.evaluate("document.querySelector('.foot').getBoundingClientRect().bottom")
     if bottom > 1650: sys.exit(f"layout too tall ({bottom:.0f}px > 1650): shorten cell text")
-    clipped = pg.evaluate("[...document.querySelectorAll('.cell .t,.ph,.rl span,.budget b,.budget small')].filter(x=>x.scrollWidth>x.clientWidth+2).map(x=>x.textContent)")
+    clipped = pg.evaluate("[...document.querySelectorAll('.cell .t,.ph,.rl span,.budget b,.budget small,.sub')].filter(x=>x.scrollWidth>x.clientWidth+2).map(x=>x.textContent)")
     if clipped: sys.exit(f"text too wide, shorten: {clipped}")
     pg.evaluate(JS)
     if os.environ.get("PREVIEW"):
